@@ -1,1 +1,20 @@
 # Defaults variables for role artifacts-srv
+# Where we'll allow users/projects/tenants to push their files
+# Each tenant/project will have a sub-directory owned by that project
+artifacts_basedir: /srv/artifacts
+
+# Httpd settings (needed for vhost and tls files)
+artifacts_httpd_hostname:
+artifacts_httpd_header: |
+  <div class="alert alert-success" role="alert">
+  This directory tree contains CentOS CI artifacts <br>
+  They are cleaned up on regular basis !
+  </div>
+
+# Projects/Tenants users to allow
+# Format:
+# artifacts_projects_list:
+#   - name: tenantA
+#     ssh_keys:
+#       - ssh-rsa blabla
+artifacts_projects_list: []

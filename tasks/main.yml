@@ -8,3 +8,42 @@
   tags:
     - vars
 
+- name: Ensuring basedir is there
+  file:
+    path: "{{ artifacts_basedir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+    setype: public_content_rw_t
+
+- name: Configuring httpd
+  import_role:
+    name: httpd
+  vars:
+    httpd_tls: True
+    httpd_html_autoindex_title: "CentOS CI Artifacts"
+    httpd_html_autoindex_content: "{{ artifacts_httpd_header }}"
+
+- import_role:
+    name: httpd
+    tasks_from: pki-tls
+  vars:
+    pki_hostname: "{{ artifacts_httpd_hostname }}"
+  notify:
+    - restart_httpd
+  tags:
+    - tls
+- name: Configuring httpd vhost
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/httpd/conf.d/{{ item }}"
+    mode: 0644
+  with_items:
+    - 02_artifacts_vhost.conf
+    - ssl-artifacts-vhost.conf
+  notify:
+    - restart_httpd
+
+- include_tasks: users.yml
+

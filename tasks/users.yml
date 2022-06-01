@@ -1,0 +1,55 @@
+- name: Ensuring that scponly is installed for specific shell
+  yum:
+    name: rssh
+    state: installed
+
+- name: Ensuring some protocols are allowed through rssh
+  blockinfile:
+    path: /etc/rssh.conf
+    block: |
+      allowscp
+      allowsftp
+      allowrsync
+
+- name: Default umask for rssh push
+  lineinfile:
+    path: /etc/rssh.conf
+    regexp: '^umask =' 
+    line: 'umask = 002'
+    state: present
+
+
+- name: Ensuring projects exist
+  user: 
+    name: '{{ item.name }}' 
+    state: present 
+    comment: "CI Tenant {{ item.name }}"
+    groups: rsshusers
+    append: True
+    shell: /bin/rssh
+  with_items: "{{ artifacts_projects_list }}"
+  loop_control:
+    label: '{{ item.name }}'
+
+     
+- name: Importing projects ssh pub keys
+  authorized_key: 
+    user: '{{ item.0.name }}' 
+    key: "{{ item.1 }}"
+  with_subelements: 
+    - '{{ artifacts_projects_list }}'
+    - ssh_keys
+  loop_control:
+    label: '{{ item.0.name }}'
+
+- name: Ensuring drop-in folder exist for tenants
+  file:
+    path: "{{ artifacts_basedir }}/{{ item.name }}"
+    state: directory
+    mode: 0755
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+  with_items: "{{ artifacts_projects_list }}"
+  loop_control:
+    label: '{{ item.name }}'
+
